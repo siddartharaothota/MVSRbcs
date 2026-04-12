@@ -16,20 +16,21 @@ export default function LoginScreen({ navigation }) {
   const BACKEND = "http://10.247.234.4:4000";
 
   const handleLogin = async () => {
-    try {
-      const res = await axios.post(`${BACKEND}/login`, {
-        username,
-        password,
-      });
+    navigation.replace("Scanner");
+    // try {
+    //   const res = await axios.post(`${BACKEND}/login`, {
+    //     username,
+    //     password,
+    //   });
 
-      if (res.data.success) {
-        navigation.replace("Scanner");
-      } else {
-        Alert.alert("Login Failed", "Invalid credentials");
-      }
-    } catch (err) {
-      console.log(err);
-    }
+    //   if (res.data.success) {
+    //     navigation.replace("Scanner");
+    //   } else {
+    //     Alert.alert("Login Failed", "Invalid credentials");
+    //   }
+    // } catch (err) {
+    //   console.log(err);
+    // }
   };
 
   return (

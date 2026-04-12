@@ -26,7 +26,7 @@ export default function ScannerScreen() {
   const [counts, setCounts] = useState({});
   const [showCounts, setShowCounts] = useState(false);
 
-  const BACKEND = "http://10.247.234.4:4000";
+  const BACKEND = "http://192.168.111.4:4000";
 
   const handleScan = async ({ data }) => {
     if (scanned) return;
@@ -163,35 +163,35 @@ export default function ScannerScreen() {
 
 
 
-const generatePDF = async () => {
-  try {
+  const generatePDF = async () => {
+    try {
 
-    const res = await axios.get(`${BACKEND}/generate-pdf`);
+      const res = await axios.get(`${BACKEND}/generate-pdf`);
 
-    if (res.data.success) {
-      const fileUrl = `${BACKEND}/files/report.pdf`;
+      if (res.data.success) {
+        const fileUrl = `${BACKEND}/files/report.pdf`;
 
-      const fileUri = FileSystem.documentDirectory + "report.pdf";
+        const fileUri = FileSystem.documentDirectory + "report.pdf";
 
-      const download = await FileSystem.downloadAsync(fileUrl, fileUri);
+        const download = await FileSystem.downloadAsync(fileUrl, fileUri);
 
-      console.log("Saved to:", download.uri);
+        console.log("Saved to:", download.uri);
 
-      await Sharing.shareAsync(download.uri);
+        await Sharing.shareAsync(download.uri);
+      }
+    } catch (err) {
+      console.log("DOWNLOAD ERROR:", err);
     }
-  } catch (err) {
-    console.log("DOWNLOAD ERROR:", err);
-  }
-};
+  };
 
   // main
   return (
     <View style={styles.container}>
       <Text style={styles.title}>MVSRbcs</Text>
 
-      <TouchableOpacity style={styles.button} onPress={generatePDF}>
+      {/* <TouchableOpacity style={styles.button} onPress={generatePDF}>
   <Text style={styles.buttonText}>Generate PDF</Text>
-</TouchableOpacity>
+</TouchableOpacity> */}
 
       <TouchableOpacity
         style={styles.button}
@@ -251,7 +251,7 @@ const generatePDF = async () => {
       )}
     </View>
 
-    
+
   );
 }
 
@@ -361,13 +361,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   closeBtn: {
-  padding: 15,
-  backgroundColor: "red",
-  alignItems: "center",
-},
+    padding: 15,
+    backgroundColor: "red",
+    alignItems: "center",
+  },
 
-closeText: {
-  color: "#fff",
-  fontWeight: "bold",
-},
+  closeText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
 });
