@@ -13,24 +13,27 @@ export default function LoginScreen({ navigation }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const BACKEND = "http://10.247.234.4:4000";
+  const [error, setError] = useState("");
+
+  const BACKEND = "http://192.168.111.4:4000";
 
   const handleLogin = async () => {
-    navigation.replace("Scanner");
-    // try {
-    //   const res = await axios.post(`${BACKEND}/login`, {
-    //     username,
-    //     password,
-    //   });
+    try {
+      const res = await axios.post(`${BACKEND}/login`, {
+        username,
+        password,
+      });
 
-    //   if (res.data.success) {
-    //     navigation.replace("Scanner");
-    //   } else {
-    //     Alert.alert("Login Failed", "Invalid credentials");
-    //   }
-    // } catch (err) {
-    //   console.log(err);
-    // }
+      if (res.data.success) {
+        setError("");
+        navigation.replace("Scanner");
+      } else {
+        setError("Invalid username or password");
+      }
+    } catch (err) {
+      setError("Server error. Try again.");
+      console.log(err.message);
+    }
   };
 
   return (
@@ -52,9 +55,18 @@ export default function LoginScreen({ navigation }) {
         onChangeText={setPassword}
       />
 
+      {error !== "" && (
+        <Text style={{ color: "red", marginBottom: 18 , marginLeft: 5}}>
+          {error}
+        </Text>
+      )}
+
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
+
+
+
     </View>
   );
 }
