@@ -13,15 +13,22 @@ app.use(express.json());
 
 
 const db = mysql.createConnection({
-  host: "192.168.111.2",
-  user: "siddartharao",
-  password: "1234",
+  host: "172.27.191.226",
+  user: "root",
+  password: "vaish",
   database: "mvsr",
 });
 
-// CREATE USER 'appuser'@'%' IDENTIFIED BY '1234';
+// CREATE USER 'user'@'%' IDENTIFIED BY '1234';
 // GRANT ALL PRIVILEGES ON *.* TO 'appuser'@'%';
 // FLUSH PRIVILEGES;
+
+
+// CREATE TABLE users (
+//   id INT AUTO_INCREMENT PRIMARY KEY,
+//   username VARCHAR(50) NOT NULL UNIQUE,
+//   password VARCHAR(100) NOT NULL
+// );
 
 
 db.connect((err) => {
@@ -29,37 +36,49 @@ db.connect((err) => {
     console.error("MySQL Error:", err);
   } else {
     console.log("Connected to MySQL");
+
+    const createScans = `
+      CREATE TABLE IF NOT EXISTS scans (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        barcode VARCHAR(100) NOT NULL,
+        scan_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+        username VARCHAR(50) NOT NULL
+      )
+    `;
+
+    const createUsers = `
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(50) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL
+      )
+    `;
+
+    db.query(createScans, (err) => {
+      if (err) console.error("Scans table error:", err);
+      else console.log("Scans table set");
+    });
+
+    db.query(createUsers, (err) => {
+      if (err) console.error("Users table error:", err);
+      else console.log("Users table set");
+    });
   }
 });
-
-// db.connect((err) => {
-//   if (err) throw err;
-
-//   console.log("Connected");
-
-//   db.query("CREATE DATABASE IF NOT EXISTS mvsr", () => {
-//     db.changeUser({ database: "mvsr" });
-
-//     db.query(`
-//       CREATE TABLE IF NOT EXISTS scans (
-//         id INT AUTO_INCREMENT PRIMARY KEY,
-//         barcode VARCHAR(100),
-//         scan_time DATETIME
-//       )
-//     `);
-//   });
-// });
 
 
 
 app.post("/scan", (req, res) => {
-  const { code } = req.body;
+  const { code, username } = req.body;
 
   const now = new Date();
 
-  const sql = "INSERT INTO scans (barcode, scan_time) VALUES (?, ?)";
+  const sql = `
+    INSERT INTO scans (barcode, scan_time, username)
+    VALUES (?, ?, ?)
+  `;
 
-  db.query(sql, [code, now], (err, result) => {
+  db.query(sql, [code, now, username], (err, result) => {
     if (err) {
       console.error("DB Error:", err);
       return res.status(500).json({ error: "Database error" });
@@ -70,22 +89,47 @@ app.post("/scan", (req, res) => {
 });
 
 
+// app.get("/data", (req, res) => {
+//   const sql = "SELECT * FROM scans ORDER BY scan_time DESC";
+
+//   db.query(sql, (err, results) => {
+//     if (err) return res.status(500).send(err);
+
+//     const formatted = {};
+
+//     results.forEach((row) => {
+//       if (!formatted[row.barcode]) {
+//         formatted[row.barcode] = [];
+//       }
+//       formatted[row.barcode].push(row.scan_time);
+//     });
+
+//     res.json(formatted);
+//   });
+// });
+
 app.get("/data", (req, res) => {
-  const sql = "SELECT * FROM scans ORDER BY scan_time DESC";
+  const sql = "SELECT * FROM scans ORDER BY scan_time DESC";//ASC
 
   db.query(sql, (err, results) => {
     if (err) return res.status(500).send(err);
 
-    const formatted = {};
+    res.json(results); // 🔥 send raw rows
+  });
+});
 
-    results.forEach((row) => {
-      if (!formatted[row.barcode]) {
-        formatted[row.barcode] = [];
-      }
-      formatted[row.barcode].push(row.scan_time);
-    });
+app.get("/counts", (req, res) => {
+  const sql = `
+    SELECT barcode, COUNT(*) as count
+    FROM scans
+    GROUP BY barcode
+    ORDER BY count DESC
+  `;
 
-    res.json(formatted);
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).send(err);
+
+    res.json(results);
   });
 });
 
@@ -95,16 +139,37 @@ app.post("/login", (req, res) => {
   const sql = "SELECT * FROM users WHERE username = ? AND password = ?";
 
   db.query(sql, [username, password], (err, results) => {
+    if (results.length > 0) {
+      res.json({
+        success: true,
+        user: results[0], // contains username
+      });
+    } else {
+      res.json({ success: false });
+    }
+  });
+});
+
+app.post("/register", (req, res) => {
+  const { username, password } = req.body;
+
+  const sql = `
+    INSERT INTO users (username, password)
+    VALUES (?, ?)
+  `;
+
+  db.query(sql, [username, password], (err, result) => {
     if (err) {
-      console.error("Login DB Error:", err);
+      console.error(err);
+
+      if (err.code === "ER_DUP_ENTRY") {
+        return res.json({ success: false, message: "User already exists" });
+      }
+
       return res.status(500).json({ success: false });
     }
 
-    if (results.length > 0) {
-      res.json({ success: true });
-    } else {
-      res.json({ success: false, message: "Invalid credentials" });
-    }
+    res.json({ success: true });
   });
 });
 

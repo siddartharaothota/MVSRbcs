@@ -12,6 +12,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "expo": {
+    "icon": "./assets/bcs.png"
+  },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.siddartharao.MVSRbcs"

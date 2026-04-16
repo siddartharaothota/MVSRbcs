@@ -10,36 +10,37 @@ import {
 
 import API from "./api";
 
-export default function LoginScreen({ navigation }) {
+export default function RegisterScreen({ navigation }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const [error, setError] = useState("");
+  const handleRegister = async () => {
+    if (!username || !password) {
+      Alert.alert("Error", "Enter all fields");
+      return;
+    }
 
-  const handleLogin = async () => {
     try {
-      const res = await API.post("/login", {
+      const res = await API.post("/register", {
         username,
         password,
       });
 
       if (res.data.success) {
-        setError("");
-        const user = res.data.user;
-
-        navigation.replace("Scanner", { user });
+        Alert.alert("Success", "User created");
+        navigation.goBack(); // go back to login
       } else {
-        setError("Invalid username or password");
+        Alert.alert("Error", res.data.message);
       }
     } catch (err) {
-      setError("Server error. Try again.");
-      console.log(err.message);
+      console.log(err);
+      Alert.alert("Error", "Server error");
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
+      <Text style={styles.title}>Create Account</Text>
 
       <TextInput
         placeholder="Username"
@@ -56,24 +57,9 @@ export default function LoginScreen({ navigation }) {
         onChangeText={setPassword}
       />
 
-      {error !== "" && (
-        <Text style={{ color: "red", marginBottom: 18, marginLeft: 5 }}>
-          {error}
-        </Text>
-      )}
-
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Login</Text>
+      <TouchableOpacity style={styles.button} onPress={handleRegister}>
+        <Text style={styles.buttonText}>Register</Text>
       </TouchableOpacity>
-
-
-
-      <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-        <Text style={{ textAlign: "center", marginTop: 10 }}>
-          Create new account
-        </Text>
-      </TouchableOpacity>
-
     </View>
   );
 }
@@ -87,14 +73,16 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    marginBottom: 20,
     fontWeight: "bold",
+    marginBottom: 30,
+    textAlign: "center",
   },
   input: {
     backgroundColor: "#fff",
-    padding: 12,
+    padding: 15,
     borderRadius: 10,
     marginBottom: 15,
+    elevation: 2,
   },
   button: {
     backgroundColor: "#4CAF50",

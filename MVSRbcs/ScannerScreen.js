@@ -6,13 +6,16 @@ import {
   StyleSheet,
   FlatList,
   Alert,
+  ImageBackground,
+  Image,
 } from "react-native";
-import * as FileSystem from "expo-file-system/legacy";
-import * as Sharing from "expo-sharing";
-import { CameraView, useCameraPermissions } from "expo-camera";
-import axios from "axios";
 
-export default function ScannerScreen() {
+import { CameraView, useCameraPermissions } from "expo-camera";
+
+import API from "./api";
+
+export default function ScannerScreen({ route, navigation }) {
+  const { user } = route.params;
   const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(false);
   const [scanned, setScanned] = useState(false);
@@ -23,10 +26,8 @@ export default function ScannerScreen() {
   const [data, setData] = useState({});
   const [showData, setShowData] = useState(false);
 
-  const [counts, setCounts] = useState({});
-  const [showCounts, setShowCounts] = useState(false);
+  const [clk, setClk] = useState(0);
 
-  const BACKEND = "http://192.168.111.4:4000";
 
   const handleScan = async ({ data }) => {
     if (scanned) return;
@@ -34,14 +35,15 @@ export default function ScannerScreen() {
     setScanned(true);
 
     try {
-      await axios.post(`${BACKEND}/scan`, { code: data });
+      await API.post("/scan", {
+        code: data,
+        username: user.username,
+      });
 
-      const res = await axios.get(`${BACKEND}/data`);
+      const res = await API.get("/data");
       const allData = res.data;
 
-      const count = Array.isArray(allData[data])
-        ? allData[data].length
-        : 0;
+      const count = allData.filter(item => item.barcode === data).length;
 
       setCurrentCode(data);
       setCurrentCount(count);
@@ -57,29 +59,16 @@ export default function ScannerScreen() {
 
   const fetchData = async () => {
     try {
-      const res = await axios.get(`${BACKEND}/data`);
+      const res = await API.get("/data");
       setData(res.data);
-      setShowData(true);
-      setShowCounts(false);
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-
-  const fetchCounts = async () => {
-    try {
-      const res = await axios.get(`${BACKEND}/data`);
-      const raw = res.data;
-
-      const result = {};
-      Object.keys(raw).forEach((key) => {
-        result[key] = Array.isArray(raw[key]) ? raw[key].length : 0;
-      });
-
-      setCounts(result);
-      setShowCounts(true);
-      setShowData(false);
+      if (clk == 0) {
+        setShowData(true);
+        setClk(1);
+      }else if (clk == 1) {
+        setShowData(false);
+        setClk(0);
+      }
+      
     } catch (err) {
       console.log(err);
     }
@@ -153,7 +142,7 @@ export default function ScannerScreen() {
               setCurrentCode("");
             }}
           >
-            <Text style={styles.scanAgainText}>Scan Again</Text>
+            <Text style={styles.scanAgainText}>Scan</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -161,97 +150,112 @@ export default function ScannerScreen() {
   }
 
 
+  // const generatePDF = async () => {
+  //   try {
 
+  //     const res = await API.get("/generate-pdf");
 
-  const generatePDF = async () => {
-    try {
+  //     if (res.data.success) {
+  //       const fileUrl = `${BACKEND}/files/report.pdf`;
 
-      const res = await axios.get(`${BACKEND}/generate-pdf`);
+  //       const fileUri = FileSystem.documentDirectory + "report.pdf";
 
-      if (res.data.success) {
-        const fileUrl = `${BACKEND}/files/report.pdf`;
+  //       const download = await FileSystem.downloadAsync(fileUrl, fileUri);
 
-        const fileUri = FileSystem.documentDirectory + "report.pdf";
+  //       console.log("Saved to:", download.uri);
 
-        const download = await FileSystem.downloadAsync(fileUrl, fileUri);
-
-        console.log("Saved to:", download.uri);
-
-        await Sharing.shareAsync(download.uri);
-      }
-    } catch (err) {
-      console.log("DOWNLOAD ERROR:", err);
-    }
-  };
+  //       await Sharing.shareAsync(download.uri);
+  //     }
+  //   } catch (err) {
+  //     console.log("DOWNLOAD ERROR:", err);
+  //   }
+  // };
 
   // main
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>MVSRbcs</Text>
+    <ImageBackground
+      source={require("./assets/bcs.png")}
+      style={styles.background}
+      resizeMode="contain"
+    //resizeMode="stretch"
+    >
+      <View style={styles.container}>
+        <Text style={styles.username}>User: {user.username}</Text>
+        <View style={styles.header}>
+          <Text style={styles.title}>MVSR bcs</Text>
+        </View>
 
-      {/* <TouchableOpacity style={styles.button} onPress={generatePDF}>
-  <Text style={styles.buttonText}>Generate PDF</Text>
-</TouchableOpacity> */}
-
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => {
-          setScanning(true);
-          setShowData(false);
-          setShowCounts(false);
-        }}
-      >
-        <Text style={styles.buttonText}>Scan Barcode</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={fetchData}>
-        <Text style={styles.buttonText}>View Data</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={fetchCounts}>
-        <Text style={styles.buttonText}>View Counts</Text>
-      </TouchableOpacity>
-
-      {showData && (
-        <FlatList
-          data={Object.keys(data)}
-          keyExtractor={(item) => item}
-          renderItem={({ item }) => {
-            const value = data[item];
-
-            return (
-              <View style={styles.card}>
-                <Text style={styles.code}>{item}</Text>
-                {Array.isArray(value) ? (
-                  value.map((time, index) => (
-                    <Text key={index}>
-                      {new Date(time).toLocaleString()}
-                    </Text>
-                  ))
-                ) : (
-                  <Text>No valid data</Text>
-                )}
+        {/* DATA SECTION */}
+        <View style={styles.dataContainer}>
+          {showData && (
+            <>
+              <View style={styles.tableHeader}>
+                <Text style={styles.headerCell}>ID</Text>
+                <Text style={styles.headerCell}>Barcode</Text>
+                <Text style={styles.headerCell}>Time</Text>
+                <Text style={styles.headerCell}>User</Text>
               </View>
-            );
-          }}
-        />
-      )}
 
-      {showCounts && (
-        <FlatList
-          data={Object.keys(counts)}
-          keyExtractor={(item) => item}
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              <Text style={styles.code}>{item}</Text>
-              <Text>Count: {counts[item]}</Text>
-            </View>
+              <FlatList
+                data={data}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => (
+                  <View style={styles.tableRow}>
+                    <Text style={styles.cell}>{item.id}</Text>
+                    <Text style={styles.cell}>{item.barcode}</Text>
+                    <Text style={styles.cell}>
+                      {new Date(item.scan_time).toLocaleString()}
+                    </Text>
+                    <Text style={styles.cell}>{item.username}</Text>
+                  </View>
+                )}
+              />
+            </>
           )}
-        />
-      )}
-    </View>
+        </View>
 
+        {/* {user.username !== "admin" && (
+          <View style={styles.gifContainer}>
+            <Image
+              source={require("./assets/loading.gif")}
+              style={styles.gif}
+            />
+          </View>
+        )} */}
 
+        <View style={styles.bottomButtons}>
+          <TouchableOpacity
+            style={styles.bcbutton}
+            onPress={() => {
+              setScanning(true);
+              setShowData(false);
+            }}
+          >
+            <Image
+              source={require("./assets/barcode.png")}
+              style={{ width: 50, height: 50 }}
+              resizeMode="contain"
+            />
+            {/* <Text style={styles.buttonText}>Scan Barcode</Text> */}
+          </TouchableOpacity>
+
+          {user.username === "admin" && (
+            <>
+              <TouchableOpacity style={styles.button} onPress={fetchData}>
+                <Text style={styles.buttonText}>View Data</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => navigation.navigate("Counts")}
+              >
+                <Text style={styles.buttonText}>View Counts</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      </View>
+    </ImageBackground>
   );
 }
 
@@ -259,7 +263,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#f5f5f5",
+  },
+  background: {
+    flex: 1,
+    backgroundColor: "white",
   },
   center: {
     flex: 1,
@@ -269,11 +276,19 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    marginTop: 40,
+    marginTop: 20,
     marginBottom: 20,
   },
   button: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#616161",
+    padding: 15,
+    marginLeft: 10,
+    borderRadius: 10,
+    marginBottom: 15,
+    alignItems: "center",
+  },
+  bcbutton: {
+    backgroundColor: "#ffffff",
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
@@ -299,7 +314,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 40,
     left: 20,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
     padding: 10,
     borderRadius: 8,
   },
@@ -369,5 +384,69 @@ const styles = StyleSheet.create({
   closeText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+
+  header: {
+    marginTop: 15,
+    marginBottom: 15,
+    alignItems: "center",
+  },
+
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+
+  username: {
+    marginTop: 25,
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#252525",
+  },
+
+
+  dataContainer: {
+    flex: 1,
+  },
+
+  bottomButtons: {
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderColor: "#ddd",
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row", 
+  justifyContent: "center",
+  },
+
+
+
+  tableHeader: {
+    flexDirection: "row",
+    backgroundColor: "#333",
+    padding: 10,
+    borderRadius: 5,
+  },
+
+  headerCell: {
+    flex: 1,
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+
+  tableRow: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    padding: 10,
+    marginVertical: 3,
+    borderRadius: 5,
+    elevation: 2,
+  },
+
+  cell: {
+    flex: 1,
+    fontSize: 12,
+    color: "#000000",
   },
 });
