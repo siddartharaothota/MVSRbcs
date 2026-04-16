@@ -8,6 +8,15 @@ import {
 import API from "./api";
 
 export default function CountsScreen() {
+  const colors = {
+    background: "#f5f5f5",
+    text: "#111111",
+    headerBackground: "#333333",
+    headerText: "#FFFFFF",
+    rowBackground: "#FFFFFF",
+    rowText: "#1A1A1A",
+  };
+
   const [data, setData] = useState([]);
 
   useEffect(() => {
@@ -24,22 +33,22 @@ export default function CountsScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Students count data</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>Students count data</Text>
 
       {/* Table Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Barcode</Text>
-        <Text style={styles.headerText}>Count</Text>
+      <View style={[styles.header, { backgroundColor: colors.headerBackground }]}>
+        <Text style={[styles.headerText, { color: colors.headerText }]}>Barcode</Text>
+        <Text style={[styles.headerText, { color: colors.headerText }]}>Count</Text>
       </View>
 
       <FlatList
         data={data}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
-          <View style={styles.row}>
-            <Text style={styles.cell}>{item.barcode}</Text>
-            <Text style={styles.cell}>{item.count}</Text>
+          <View style={[styles.row, { backgroundColor: colors.rowBackground }]}>
+            <Text style={[styles.cell, { color: colors.rowText }]}>{item.barcode}</Text>
+            <Text style={[styles.cell, { color: colors.rowText }]}>{item.count}</Text>
           </View>
         )}
       />
@@ -62,20 +71,17 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: "row",
-    backgroundColor: "#333",
     padding: 10,
     borderRadius: 5,
   },
 
   headerText: {
     flex: 1,
-    color: "#fff",
     fontWeight: "bold",
   },
 
   row: {
     flexDirection: "row",
-    backgroundColor: "#fff",
     padding: 12,
     marginVertical: 4,
     borderRadius: 5,

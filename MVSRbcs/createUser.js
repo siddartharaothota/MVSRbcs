@@ -11,6 +11,13 @@ import {
 import API from "./api";
 
 export default function RegisterScreen({ navigation }) {
+  const colors = {
+    background: "#f5f5f5",
+    text: "#111111",
+    inputBackground: "#FFFFFF",
+    placeholder: "#6B6B6B",
+  };
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -39,19 +46,27 @@ export default function RegisterScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Create Account</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
 
       <TextInput
         placeholder="Username"
-        style={styles.input}
+        placeholderTextColor={colors.placeholder}
+        style={[
+          styles.input,
+          { backgroundColor: colors.inputBackground, color: colors.text },
+        ]}
         value={username}
         onChangeText={setUsername}
       />
 
       <TextInput
         placeholder="Password"
-        style={styles.input}
+        placeholderTextColor={colors.placeholder}
+        style={[
+          styles.input,
+          { backgroundColor: colors.inputBackground, color: colors.text },
+        ]}
         secureTextEntry
         value={password}
         onChangeText={setPassword}

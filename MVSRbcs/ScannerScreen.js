@@ -15,6 +15,16 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import API from "./api";
 
 export default function ScannerScreen({ route, navigation }) {
+  const colors = {
+    background: "#FFFFFF",
+    primaryText: "#121212",
+    border: "#DDDDDD",
+    tableHeaderBackground: "#333333",
+    tableRowBackground: "#FFFFFF",
+    tableText: "#000000",
+    iconButtonBackground: "#FFFFFF",
+  };
+
   const { user } = route.params;
   const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(false);
@@ -175,21 +185,21 @@ export default function ScannerScreen({ route, navigation }) {
   return (
     <ImageBackground
       source={require("./assets/bcs.png")}
-      style={styles.background}
+      style={[styles.background, { backgroundColor: colors.background }]}
       resizeMode="contain"
     //resizeMode="stretch"
     >
       <View style={styles.container}>
-        <Text style={styles.username}>User: {user.username}</Text>
+        <Text style={[styles.username, { color: colors.primaryText }]}>User: {user.username}</Text>
         <View style={styles.header}>
-          <Text style={styles.title}>MVSR bcs</Text>
+          <Text style={[styles.title, { color: colors.primaryText }]}>MVSR bcs</Text>
         </View>
 
         {/* DATA SECTION */}
         <View style={styles.dataContainer}>
           {showData && (
             <>
-              <View style={styles.tableHeader}>
+              <View style={[styles.tableHeader, { backgroundColor: colors.tableHeaderBackground }]}>
                 <Text style={styles.headerCell}>ID</Text>
                 <Text style={styles.headerCell}>Barcode</Text>
                 <Text style={styles.headerCell}>Time</Text>
@@ -200,13 +210,13 @@ export default function ScannerScreen({ route, navigation }) {
                 data={data}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
-                  <View style={styles.tableRow}>
-                    <Text style={styles.cell}>{item.id}</Text>
-                    <Text style={styles.cell}>{item.barcode}</Text>
-                    <Text style={styles.cell}>
+                  <View style={[styles.tableRow, { backgroundColor: colors.tableRowBackground }]}>
+                    <Text style={[styles.cell, { color: colors.tableText }]}>{item.id}</Text>
+                    <Text style={[styles.cell, { color: colors.tableText }]}>{item.barcode}</Text>
+                    <Text style={[styles.cell, { color: colors.tableText }]}>
                       {new Date(item.scan_time).toLocaleString()}
                     </Text>
-                    <Text style={styles.cell}>{item.username}</Text>
+                    <Text style={[styles.cell, { color: colors.tableText }]}>{item.username}</Text>
                   </View>
                 )}
               />
@@ -223,11 +233,12 @@ export default function ScannerScreen({ route, navigation }) {
           </View>
         )} */}
 
-        <View style={styles.bottomButtons}>
+        <View style={[styles.bottomButtons, { borderColor: colors.border }]}>
           <TouchableOpacity
-            style={styles.bcbutton}
+            style={[styles.bcbutton, { backgroundColor: colors.iconButtonBackground }]}
             onPress={() => {
               setScanning(true);
+              setClk(0);
               setShowData(false);
             }}
           >
@@ -401,7 +412,6 @@ const styles = StyleSheet.create({
     marginTop: 25,
     fontSize: 14,
     fontWeight: "bold",
-    color: "#252525",
   },
 
 

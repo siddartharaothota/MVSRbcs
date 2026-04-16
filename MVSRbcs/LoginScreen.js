@@ -11,6 +11,14 @@ import {
 import API from "./api";
 
 export default function LoginScreen({ navigation }) {
+  const colors = {
+    background: "#f5f5f5",
+    text: "#111111",
+    inputBackground: "#FFFFFF",
+    placeholder: "#6B6B6B",
+    secondaryText: "#333333",
+  };
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -38,19 +46,27 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>Login</Text>
 
       <TextInput
         placeholder="Username"
-        style={styles.input}
+        placeholderTextColor={colors.placeholder}
+        style={[
+          styles.input,
+          { backgroundColor: colors.inputBackground, color: colors.text },
+        ]}
         value={username}
         onChangeText={setUsername}
       />
 
       <TextInput
         placeholder="Password"
-        style={styles.input}
+        placeholderTextColor={colors.placeholder}
+        style={[
+          styles.input,
+          { backgroundColor: colors.inputBackground, color: colors.text },
+        ]}
         secureTextEntry
         value={password}
         onChangeText={setPassword}
@@ -69,7 +85,7 @@ export default function LoginScreen({ navigation }) {
 
 
       <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-        <Text style={{ textAlign: "center", marginTop: 10 }}>
+        <Text style={{ textAlign: "center", marginTop: 10, color: colors.secondaryText }}>
           Create new account
         </Text>
       </TouchableOpacity>

@@ -13,15 +13,13 @@ app.use(express.json());
 
 
 const db = mysql.createConnection({
-  host: "172.27.191.226",
-  user: "root",
-  password: "vaish",
+  host: "localhost",//172.27.191.4
+  user: "siddu",
+  password: "1234",
   database: "mvsr",
 });
 
-// CREATE USER 'user'@'%' IDENTIFIED BY '1234';
-// GRANT ALL PRIVILEGES ON *.* TO 'appuser'@'%';
-// FLUSH PRIVILEGES;
+
 
 
 // CREATE TABLE users (

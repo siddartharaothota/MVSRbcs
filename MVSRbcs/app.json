@@ -4,24 +4,21 @@
     "slug": "MVSRbcs",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/bcs.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/bcs.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "expo": {
-    "icon": "./assets/bcs.png"
-  },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.siddartharao.MVSRbcs"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/bcs.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,

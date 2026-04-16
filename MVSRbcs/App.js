@@ -1,6 +1,6 @@
 //siddartharao
 import React from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import LoginScreen from "./LoginScreen";
@@ -12,8 +12,15 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator>
+    <NavigationContainer theme={DefaultTheme}>
+      <Stack.Navigator
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: "#FFFFFF",
+          },
+          headerTintColor: "#111111",
+        }}
+      >
         <Stack.Screen
           name="Login"
           component={LoginScreen}
