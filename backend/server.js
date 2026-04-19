@@ -1,7 +1,4 @@
 const express = require("express");
-const PDFDocument = require("pdfkit-table");
-const fs = require("fs");
-const path = require("path");
 const mysql = require("mysql2");
 
 const app = express();

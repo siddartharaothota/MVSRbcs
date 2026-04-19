@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/bcs.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/bcs.png",
       "resizeMode": "contain",
@@ -21,7 +20,7 @@
         "foregroundImage": "./assets/bcs.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
+      "usesCleartextTraffic": true,
       "permissions": [
         "android.permission.CAMERA"
       ],
@@ -31,7 +30,11 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-sharing"
-    ]
+      "expo-sharing",
+      "expo-audio"
+    ],
+    "extra": {
+      "apiBaseUrl": "http://192.168.0.119:4000"
+    }
   }
 }

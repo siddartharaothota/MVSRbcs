@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
 
 import API from "./api";
 
@@ -37,12 +38,62 @@ export default function ScannerScreen({ route, navigation }) {
   const [showData, setShowData] = useState(false);
 
   const [clk, setClk] = useState(0);
+  const playerRef = useRef(null);
 
+  useEffect(() => {
+    const configureAudio = async () => {
+      try {
+        await setAudioModeAsync({
+          playsInSilentMode: true,
+          shouldPlayInBackground: false,
+        });
 
+        const player = createAudioPlayer(require("./assets/beep.mp3"));
+        player.loop = false;
+        playerRef.current = player;
+      } catch (err) {
+        console.log("Audio mode error:", err.message);
+      }
+    };
+
+    configureAudio();
+
+    return () => {
+      if (playerRef.current) {
+        playerRef.current.remove();
+      }
+    };
+  }, []);
+
+  const playBeep = async () => {
+    if (!playerRef.current) {
+      return;
+    }
+
+    try {
+      await playerRef.current.seekTo(0);
+      playerRef.current.play();
+    } catch (err) {
+      console.log("Sound error:", err.message);
+    }
+  };
+
+  let timer;
   const handleScan = async ({ data }) => {
     if (scanned) return;
 
     setScanned(true);
+
+    const pattern = /^\d{4}-\d{2}-\d{3}-\d{3}$/;
+
+    if (!pattern.test(data)) {
+      setScanning(false);
+      setScanned(false);
+      Alert.alert("Invalid Barcode", "Something went wrong. try again.");
+      return;
+    }
+
+    playBeep();
 
     try {
       await API.post("/scan", {
@@ -52,11 +103,19 @@ export default function ScannerScreen({ route, navigation }) {
 
       const res = await API.get("/data");
       const allData = res.data;
-
       const count = allData.filter(item => item.barcode === data).length;
 
       setCurrentCode(data);
       setCurrentCount(count);
+
+      setScanning(false);//to go back
+
+      if (timer) clearTimeout(timer);
+
+      timer = setTimeout(() => {
+        setCurrentCode("");
+        setCurrentCount(0);
+      }, 3000);
 
       if (count === 3) {
         Alert.alert("3rd times late", `Barcode: ${data}`);
@@ -66,7 +125,6 @@ export default function ScannerScreen({ route, navigation }) {
     }
   };
 
-
   const fetchData = async () => {
     try {
       const res = await API.get("/data");
@@ -74,11 +132,11 @@ export default function ScannerScreen({ route, navigation }) {
       if (clk == 0) {
         setShowData(true);
         setClk(1);
-      }else if (clk == 1) {
+      } else if (clk == 1) {
         setShowData(false);
         setClk(0);
       }
-      
+
     } catch (err) {
       console.log(err);
     }
@@ -90,6 +148,11 @@ export default function ScannerScreen({ route, navigation }) {
   if (!permission.granted) {
     return (
       <View style={styles.center}>
+
+        <Text style={styles.permission}>Need permission to use camera for barcode scanning.</Text>
+        <Text style={{ color: "#000000", marginBottom: 20 }}>
+          Click on <Text style={{ color: "#000000", fontWeight: "bold" }}>'Allow Camera'</Text> to grant permission.
+        </Text>
         <TouchableOpacity style={styles.button} onPress={requestPermission}>
           <Text style={styles.buttonText}>Allow Camera</Text>
         </TouchableOpacity>
@@ -128,7 +191,8 @@ export default function ScannerScreen({ route, navigation }) {
           Align barcode inside the box
         </Text> */}
 
-        {currentCode !== "" && (
+        {/*the rollno and count*/}
+        {/* {currentCode !== "" && (
           <View style={styles.resultBox}>
             <Text
               style={[
@@ -142,7 +206,7 @@ export default function ScannerScreen({ route, navigation }) {
               Count: {currentCount}
             </Text>
           </View>
-        )}
+        )} */}
 
         {scanned && (
           <TouchableOpacity
@@ -170,10 +234,21 @@ export default function ScannerScreen({ route, navigation }) {
     //resizeMode="stretch"
     >
       <View style={styles.container}>
-        <Text style={[styles.username, { color: colors.primaryText }]}>User: {user.username}</Text>
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.primaryText }]}>MVSR bcs</Text>
+        <View style={styles.topRow}>
+
+          <Text style={styles.title}>
+            MVSR bcs
+          </Text>
+
+          <Text style={styles.username}>
+            User: {user.username}
+          </Text>
+
         </View>
+
+
+
+
 
         {/* DATA SECTION */}
         <View style={styles.dataContainer}>
@@ -213,38 +288,74 @@ export default function ScannerScreen({ route, navigation }) {
           </View>
         )} */}
 
+        {currentCode !== "" && (
+          <View style={styles.lastScannedBox}>
+            <Text style={styles.lastScannedTitle}>Scanned</Text>
+
+            <Text style={styles.lastScannedCode}>
+              {currentCode}
+            </Text>
+
+            <Text style={styles.lastScannedCount}>
+              Count: {currentCount}
+            </Text>
+          </View>
+        )}
+
         <View style={[styles.bottomButtons, { borderColor: colors.border }]}>
-          <TouchableOpacity
-            style={[styles.bcbutton, { backgroundColor: colors.iconButtonBackground }]}
-            onPress={() => {
-              setScanning(true);
-              setClk(0);
-              setShowData(false);
-            }}
-          >
-            <Image
-              source={require("./assets/barcode.png")}
-              style={{ width: 50, height: 50 }}
-              resizeMode="contain"
-            />
-            {/* <Text style={styles.buttonText}>Scan Barcode</Text> */}
-          </TouchableOpacity>
 
-          {user.username === "admin" && (
-            <>
-              <TouchableOpacity style={styles.button} onPress={fetchData}>
-                <Text style={styles.buttonText}>View Data</Text>
-              </TouchableOpacity>
+          <View style={styles.groupContainer}>
 
-              <TouchableOpacity
-                style={styles.button}
-                onPress={() => navigation.navigate("Counts")}
-              >
-                <Text style={styles.buttonText}>View Counts</Text>
-              </TouchableOpacity>
-            </>
-          )}
+
+            {user.username === "Vaishu" && (
+              <>
+                <TouchableOpacity
+                  style={styles.groupButton}
+                  onPress={() => navigation.navigate("ManualEntry", { user })}
+                >
+                  <Text style={styles.groupText}>Manual Entry</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+
+            <TouchableOpacity
+              style={styles.groupButton}
+              onPress={() => {
+                setScanning(true);
+                setClk(0);
+                setShowData(false);
+                setScanned(false);
+              }}
+            >
+              <Image
+                source={require("./assets/barcode.png")}
+                style={{ width: 50, height: 50 }}
+                resizeMode="contain"
+              />
+              {/* <Text style={styles.buttonText}>Scan Barcode</Text> */}
+            </TouchableOpacity>
+
+
+            {user.username === "admin" && (
+              <>
+                <TouchableOpacity style={styles.groupButton} onPress={fetchData}>
+                  <Text style={styles.groupText}>View Data</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.groupButton}
+                  onPress={() => navigation.navigate("Counts")}
+                >
+                  <Text style={styles.groupText}>View Counts</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+          </View>
+
         </View>
+
       </View>
     </ImageBackground>
   );
@@ -312,6 +423,16 @@ const styles = StyleSheet.create({
   backText: {
     color: "#fff",
   },
+
+  permission: {
+    color: "#000000",
+    fontSize: 16,
+    marginLeft: 20,
+    marginRight: 20,
+    marginBottom: 25,
+    fontWeight: "bold",
+  },
+
   overlay: {
     position: "absolute",
     justifyContent: "center",
@@ -389,7 +510,7 @@ const styles = StyleSheet.create({
   },
 
   username: {
-    marginTop: 25,
+    marginTop: 5,
     fontSize: 14,
     fontWeight: "bold",
   },
@@ -405,8 +526,8 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
     justifyContent: "center",
     alignItems: "center",
-    flexDirection: "row", 
-  justifyContent: "center",
+    flexDirection: "row",
+    justifyContent: "center",
   },
 
 
@@ -434,9 +555,73 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
 
+  topRow: {
+    flexDirection: "column",
+    alignItems: "left",
+    marginTop: 25,
+  },
+
+  manualBtn: {
+    backgroundColor: "#006a9f",
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+  },
+
   cell: {
     flex: 1,
     fontSize: 12,
     color: "#000000",
+  },
+
+  lastScannedBox: {
+    backgroundColor: "#000000cc",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 10,
+    alignItems: "center",
+  },
+
+  lastScannedTitle: {
+    color: "#fff",
+    fontSize: 12,
+    marginBottom: 4,
+  },
+
+  lastScannedCode: {
+    color: "#00FF00",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+
+  lastScannedCount: {
+    color: "#fff",
+    marginTop: 4,
+  },
+
+  groupContainer: {
+    flexDirection: "row",
+    borderWidth: 1,
+    borderColor: "#616161",
+    borderRadius: 10,
+    overflow: "hidden", // important (cuts inner borders cleanly)
+  },
+
+  groupButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRightWidth: 1,
+    borderColor: "#616161",
+  },
+
+  lastButton: {
+    borderRightWidth: 0, // remove last divider
+  },
+
+  groupText: {
+    color: "#000000",
+    fontWeight: "bold",
   },
 });

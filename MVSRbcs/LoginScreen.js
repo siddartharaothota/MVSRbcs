@@ -82,13 +82,11 @@ export default function LoginScreen({ navigation }) {
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
 
-
-
-      <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+      {/* <TouchableOpacity onPress={() => navigation.navigate("Register")}>
         <Text style={{ textAlign: "center", marginTop: 10, color: colors.secondaryText }}>
           Create new account
         </Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
     </View>
   );
