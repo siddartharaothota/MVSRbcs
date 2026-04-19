@@ -3,9 +3,13 @@ import {
   View,
   Text,
   FlatList,
+  TouchableOpacity,
   StyleSheet,
 } from "react-native";
 import API from "./api";
+
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 
 export default function CountsScreen() {
   const colors = {
@@ -32,6 +36,23 @@ export default function CountsScreen() {
     }
   };
 
+  const generatePDF = async () => {
+  try {
+    const fileUri = FileSystem.documentDirectory + "report.pdf";
+
+    const download = await FileSystem.downloadAsync(
+      `${API.defaults.baseURL}/generate-pdf`,
+      fileUri
+    );
+
+    console.log("Saved:", download.uri);
+
+    await Sharing.shareAsync(download.uri);
+  } catch (err) {
+    console.log("ERROR:", err);
+  }
+};
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={[styles.title, { color: colors.text }]}>Students count data</Text>
@@ -52,6 +73,12 @@ export default function CountsScreen() {
           </View>
         )}
       />
+
+
+      <TouchableOpacity style={styles.button} onPress={generatePDF}>
+        <Text style={styles.buttonText}>Generate PDF</Text>
+      </TouchableOpacity>
+
     </View>
   );
 }
@@ -90,5 +117,19 @@ const styles = StyleSheet.create({
 
   cell: {
     flex: 1,
+  },
+
+  button: {
+    backgroundColor: "#616161",
+    padding: 15,
+    marginLeft: 10,
+    borderRadius: 10,
+    marginBottom: 15,
+    alignItems: "center",
+  },
+  
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 });

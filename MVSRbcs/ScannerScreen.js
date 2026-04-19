@@ -160,26 +160,6 @@ export default function ScannerScreen({ route, navigation }) {
   }
 
 
-  // const generatePDF = async () => {
-  //   try {
-
-  //     const res = await API.get("/generate-pdf");
-
-  //     if (res.data.success) {
-  //       const fileUrl = `${BACKEND}/files/report.pdf`;
-
-  //       const fileUri = FileSystem.documentDirectory + "report.pdf";
-
-  //       const download = await FileSystem.downloadAsync(fileUrl, fileUri);
-
-  //       console.log("Saved to:", download.uri);
-
-  //       await Sharing.shareAsync(download.uri);
-  //     }
-  //   } catch (err) {
-  //     console.log("DOWNLOAD ERROR:", err);
-  //   }
-  // };
 
   // main
   return (
@@ -340,8 +320,8 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   scanBox: {
-    width: 300,
-    height: 80,
+    width: 270,
+    height: 270,
     borderWidth: 2,
     borderColor: "#00FF00",
     borderRadius: 10,

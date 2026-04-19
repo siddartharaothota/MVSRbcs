@@ -173,44 +173,63 @@ app.post("/register", (req, res) => {
 
 
 app.get("/generate-pdf", async (req, res) => {
-  const sql = `
+  const dataQuery = `
+    SELECT barcode, scan_time, username
+    FROM scans
+    ORDER BY scan_time DESC
+  `;
+
+  const countQuery = `
     SELECT barcode, COUNT(*) as count
     FROM scans
     GROUP BY barcode
   `;
 
-  db.query(sql, async (err, results) => {
+  db.query(dataQuery, (err, dataResults) => {
     if (err) return res.status(500).send(err);
 
-    const doc = new PDFDocument({ margin: 30 });
+    db.query(countQuery, async (err, countResults) => {
+      if (err) return res.status(500).send(err);
 
-    const filePath = path.join(__dirname, "report.pdf");
-    const stream = fs.createWriteStream(filePath);
+      // 🔥 Convert counts to map for quick lookup
+      const countMap = {};
+      countResults.forEach((row) => {
+        countMap[row.barcode] = row.count;
+      });
 
-    doc.pipe(stream);
+      const doc = new PDFDocument({ margin: 30 });
 
-    doc.fontSize(20).text("Students Data", { align: "center" });
-    doc.moveDown();
+      const filePath = path.join(__dirname, "report.pdf");
+      const stream = fs.createWriteStream(filePath);
 
-    const tableData = results.map((row) => [
-      row.barcode,
-      row.count,
-    ]);
+      doc.pipe(stream);
 
-    const table = {
-      headers: ["Roll No", "Count"],
-      rows: tableData,
-    };
+      doc.fontSize(20).text("Students Full Data", { align: "center" });
+      doc.moveDown();
 
-    await doc.table(table, {
-      width: 500,
-      columnsSize: [350, 150],
-    });
+      // ✅ Combine everything into one table
+      const tableData = dataResults.map((row) => [
+        row.barcode,
+        new Date(row.scan_time).toLocaleString("en-IN"),
+        row.username,
+        countMap[row.barcode] || 0,
+      ]);
 
-    doc.end();
+      const table = {
+        headers: ["Barcode", "Scan Time", "Username", "Total Count"],
+        rows: tableData,
+      };
 
-    stream.on("finish", () => {
-      res.json({ success: true, file: "report.pdf" });
+      await doc.table(table, {
+        width: 500,
+        columnsSize: [120, 160, 120, 100],
+      });
+
+      doc.end();
+
+      stream.on("finish", () => {
+        res.download(filePath); // ✅ direct download (important)
+      });
     });
   });
 });

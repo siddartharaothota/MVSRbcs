@@ -110,7 +110,7 @@ app.get("/data", (req, res) => {
   db.query(sql, (err, results) => {
     if (err) return res.status(500).send(err);
 
-    res.json(results); // 🔥 send raw rows
+    res.json(results);
   });
 });
 
@@ -138,7 +138,7 @@ app.post("/login", (req, res) => {
     if (results.length > 0) {
       res.json({
         success: true,
-        user: results[0], // contains username
+        user: results[0],
       });
     } else {
       res.json({ success: false });
@@ -170,51 +170,75 @@ app.post("/register", (req, res) => {
 });
 
 
-app.get("/generate-pdf", async (req, res) => {
-  const sql = `
+app.get("/generate-pdf", (req, res) => {
+  const dataQuery = `
+    SELECT barcode, scan_time, username
+    FROM scans
+    ORDER BY scan_time DESC
+  `;
+
+  const countQuery = `
     SELECT barcode, COUNT(*) as count
     FROM scans
     GROUP BY barcode
-  `;
+    ORDER BY count DESC
+  `;//ASC
 
-  db.query(sql, async (err, results) => {
+  db.query(dataQuery, (err, dataResults) => {
     if (err) return res.status(500).send(err);
 
-    const doc = new PDFDocument({ margin: 30 });
+    db.query(countQuery, (err, countResults) => {
+      if (err) return res.status(500).send(err);
 
-    const filePath = path.join(__dirname, "report.pdf");
-    const stream = fs.createWriteStream(filePath);
+      const PDFDocument = require("pdfkit-table");
+      const doc = new PDFDocument({ margin: 30 });
 
-    doc.pipe(stream);
+      res.writeHead(200, {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "attachment; filename=report.pdf",
+      });
 
-    doc.fontSize(20).text("Students Data", { align: "center" });
-    doc.moveDown();
+      doc.pipe(res);
 
-    const tableData = results.map((row) => [
-      row.barcode,
-      row.count,
-    ]);
+      // page 1
+      doc.fontSize(20).text("Time and User Data", { align: "center" });
+      doc.moveDown();
 
-    const table = {
-      headers: ["Roll No", "Count"],
-      rows: tableData,
-    };
+      let count = 1;
+      const dataTable = {
+        headers: ["S.No", "Barcode", "Time", "User"],
+        rows: dataResults.map((row) => [
+          count++,
+          row.barcode,
+          new Date(row.scan_time).toLocaleString(),
+          row.username,
+        ]),
+      };
 
-    await doc.table(table, {
-      width: 500,
-      columnsSize: [350, 150],
-    });
+      doc.table(dataTable);
 
-    doc.end();
+      // page 2
+      doc.addPage();
 
-    stream.on("finish", () => {
-      res.json({ success: true, file: "report.pdf" });
+      doc.fontSize(20).text("Count Data", { align: "center" });
+      doc.moveDown();
+
+      let count2 = 1;
+      const countTable = {
+        headers: ["S.No", "Barcode", "Count"],
+        rows: countResults.map((row) => [
+          count2++,
+          row.barcode,
+          row.count,
+        ]),
+      };
+
+      doc.table(countTable);
+
+      doc.end();
     });
   });
 });
-
-app.use("/files", express.static(__dirname));
-
 
 const server = app.listen(PORT, HOST, () => {
   console.log(`Server running on http://${HOST}:${PORT}`);
